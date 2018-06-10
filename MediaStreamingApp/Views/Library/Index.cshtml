@@ -1,0 +1,33 @@
+﻿@{
+    ViewBag.Title = "My Library";
+    var userId = ViewBag.UserId;
+}
+
+<div class="row" ng-controller="MainController">
+    <div class="col-md-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <ul class="nav nav-pills" role="tablist">
+                    <li ng-class="{'active': PageName == 'allmedia'}" role="presentation"><a href="~/library/index">All Media<span class="badge">{{NumMediaFiles}}</span></a></li>
+                    <li ng-class="{'active': PageName == 'upload'}" role="presentation"><a href="~/library/index/#!upload">Upload</a></li>
+                </ul>
+            </div>
+
+            <div ng-view></div>
+            
+        </div>
+    </div>
+</div>
+
+
+
+@*
+@section head
+{
+    <base href="/Library" />
+}
+
+@section scripts
+{
+    @Scripts.Render("~/bundles/angularjs-app/library")
+}*@

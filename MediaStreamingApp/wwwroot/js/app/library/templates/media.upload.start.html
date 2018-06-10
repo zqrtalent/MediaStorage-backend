@@ -1,0 +1,29 @@
+﻿<div class="panel-body">
+    <!-- First step  -->
+    <div class="row">
+        <div class="col-sm-10">
+            <div ng-if="Warning.IsActive == true" class="alert alert-warning" role="alert">
+                {{Warning.Text}}
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <form enctype="multipart/form-data">
+            <div ng-repeat="i in UploadInputs" class="row">
+                <div class="col-md-4">
+                    <input class="input-sm disabled" type="file" name="{{i.Name}}" onchange="angular.element(this).scope().onMediaFileChange($(this)[0].name)" />
+                </div>
+                
+                <div class="col-md-4" ng-show="Status.IsBusy == true && $index == Status.UploadInfo.uploadIdx">
+                    <div class="progress-bar" role="progressbar" aria-valuenow="{{Status.UploadInfo.percentage}}" aria-valuemin="0" aria-valuemax="100" style="width: {{Status.UploadInfo.percentage}}%">
+                        {{Status.UploadInfo.percentage}}%
+                    </div>
+                </div>
+            </div>
+            <div class="clearfix" style="padding-top: 8px;">
+                <button ng-class="{'disabled': !Status.IsReadyToUpload}" ng-click="onUploadAction()" type="button" class="btn btn-primary">Upload</button>
+            </div>
+        </form>
+        
+    </div>
+</div>

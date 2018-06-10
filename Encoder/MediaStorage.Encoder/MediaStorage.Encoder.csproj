@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common\MediaStorage.Common.Dtos\MediaStorage.Common.Dtos.csproj" />
+    <ProjectReference Include="..\..\Storage\MediaStorage.IO\MediaStorage.IO.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NewtonSoft.Json" Version="11.0.2" />
+  </ItemGroup>
+</Project>

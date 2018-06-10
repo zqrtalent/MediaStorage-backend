@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MediaStorage.IO\MediaStorage.IO.csproj" />
+    <ProjectReference Include="..\MediaStorage.IO.GoogleDrive\MediaStorage.IO.GoogleDrive.csproj" />
+  </ItemGroup>
+</Project>

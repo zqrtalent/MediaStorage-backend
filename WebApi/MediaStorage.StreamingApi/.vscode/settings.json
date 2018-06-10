@@ -1,0 +1,16 @@
+// Place your settings in this file to overwrite the default settings
+{
+    "workbench.editor.showTabs": true,
+    "workbench.startupEditor": "newUntitledFile",
+    "editor.fontSize": 13,
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/bin": true,
+        "**/obj": true
+    },
+    "editor.lineHeight": 18
+}

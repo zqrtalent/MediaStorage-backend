@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MediaStorage.Data\MediaStorage.Data.csproj" />
+    <ProjectReference Include="..\MediaStorage.Data.Streaming\MediaStorage.Data.Streaming.csproj" />
+    <ProjectReference Include="..\MediaStorage.Data.Media\MediaStorage.Data.Media.csproj" />
+    <ProjectReference Include="..\MediaStorage.Data.WebApp\MediaStorage.Data.WebApp.csproj" />
+    <ProjectReference Include="..\..\Common\MediaStorage.Common.DI\MediaStorage.Common.DI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="2.0.3" />
+  </ItemGroup>
+</Project>

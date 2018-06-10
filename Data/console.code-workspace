@@ -1,0 +1,23 @@
+{
+	"folders": [
+		{
+			"path": "MediaStorage.Data.ConsoleApp"
+		},
+		{
+			"path": "MediaStorage.Data.WebApp"
+		},
+		{
+			"path": "MediaStorage.Data.Streaming"
+		},
+		{
+			"path": "MediaStorage.Data.Media"
+		},
+		{
+			"path": "MediaStorage.Data"
+		},
+		{
+			"path": "MediaStorage.Data.UnitTests"
+		}
+	],
+    "settings": {}
+}

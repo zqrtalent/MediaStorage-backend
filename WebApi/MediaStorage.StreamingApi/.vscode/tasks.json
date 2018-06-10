@@ -1,0 +1,42 @@
+{
+    "version": "2.0.0",
+    "tasks": [{
+        "label": "StreamingApi-Build (Debug)",
+        "type": "shell",
+        "command": "dotnet",
+        "args": [
+            "build",
+            "${workspaceRoot}/MediaStorage.StreamingApi.csproj",
+            "-c",
+            "Debug",
+            "--no-restore",
+            "-o",
+            "${workspaceRoot}/bin/Debug/netcoreapp2.0"
+        ],
+        "problemMatcher": "$msCompile",
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        }
+    },
+    {
+        "label": "StreamingApi-Build (Release)",
+        "type": "shell",
+        "command": "dotnet",
+        "args": [
+            "build",
+            "${workspaceRoot}/MediaStorage.StreamingApi.csproj",
+            "-c",
+            "Release",
+            "--no-restore",
+            "-o",
+            "${workspaceRoot}/bin/Debug/netcoreapp2.0"
+        ],
+        "problemMatcher": "$msCompile",
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        }
+    }
+]
+}

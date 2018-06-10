@@ -1,0 +1,32 @@
+﻿<div class="panel-body">
+    <!-- Second step -->
+
+    <ul class="list-group">
+        <li class="list-group-item" ng-repeat="a in model[0].Artists" ng-init="artistIndex = $index">
+            <p data-toggle="collapse" data-target="#artist{{::artistIndex}}">
+            <span class="glyphicon glyphicon-collapse-down"></span>
+            <span>{{a.Name}}</span>
+            </p>
+            <ul id="artist{{::$index}}" class="list-group">
+                 <li class="list-group-item" ng-repeat="alb in a.Albums" ng-init="albumIndex = $index">
+                     <p data-toggle="collapse" data-target="#album{{::artistIndex}}_{{::albumIndex}}">
+                         <span class="glyphicon glyphicon-collapse-down"/>
+                         <span>{{alb.Name}}</span>&bull;<span>{{alb.Year}}</span>
+                     </p>
+                     <ul id="album{{::artistIndex}}_{{::albumIndex}}" class="list-group">
+                         <li class="list-group-item" ng-repeat="s in alb.Songs">
+                             <span>{{s.Track}}</span>
+                             &bull;
+                             <span>{{s.Name}}</span>
+                             &bull;
+                             <span>{{s.Genre}}</span>
+                         </li>
+                     </ul>
+                 </li>
+            </ul>
+        </li>
+    </ul>
+
+    
+    <button class="btn btn-primary" ng-click="onCompleteUpload()">Complete</button>
+</div>

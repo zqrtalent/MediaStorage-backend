@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common\MediaStorage.Common.DI\MediaStorage.Common.DI.csproj" />
+    <ProjectReference Include="..\..\Common\MediaStorage.Common.Extensions\MediaStorage.Common.Extensions.csproj" />
+    <ProjectReference Include="..\..\Common\MediaStorage.Common.Dtos\MediaStorage.Common.Dtos.csproj" />
+    <ProjectReference Include="..\..\Encoder\MediaStorage.Encoder\MediaStorage.Encoder.csproj" />
+    <ProjectReference Include="..\..\Storage\MediaStorage.IO\MediaStorage.IO.csproj" />
+    
+    <ProjectReference Include="..\..\Data\MediaStorage.Data\MediaStorage.Data.csproj" />
+    <ProjectReference Include="..\..\Data\MediaStorage.Data.Media\MediaStorage.Data.Media.csproj" />
+    <ProjectReference Include="..\..\Data\MediaStorage.Data.Streaming\MediaStorage.Data.Streaming.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="1.59.2" />
+  </ItemGroup>
+</Project>

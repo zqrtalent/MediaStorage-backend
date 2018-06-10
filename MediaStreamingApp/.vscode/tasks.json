@@ -1,0 +1,42 @@
+{
+    "version": "2.0.0",
+    "tasks": [{
+        "label": "Build (Debug)",
+        "type": "shell",
+        "command": "dotnet",
+        "args": [
+            "build",
+            "${workspaceRoot}/MediaStreamingApp.csproj",
+            "-c",
+            "Debug",
+            "--no-restore",
+            "-o",
+            "${workspaceRoot}/bin/Debug/netcoreapp2.0"
+        ],
+        "problemMatcher": "$msCompile",
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        }
+    },
+    {
+        "label": "Build (Release)",
+        "type": "shell",
+        "command": "dotnet",
+        "args": [
+            "build",
+            "${workspaceRoot}/MediaStreamingApp.csproj",
+            "-c",
+            "Release",
+            "--no-restore",
+            "-o",
+            "${workspaceRoot}/bin/Release/netcoreapp2.0"
+        ],
+        "problemMatcher": "$msCompile",
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        }
+    }
+]
+}

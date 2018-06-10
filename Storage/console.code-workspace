@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "MediaStorage.IO.ConsoleApp"
+		},
+		{
+			"path": "MediaStorage.IO"
+		},
+		{
+			"path": "MediaStorage.IO.GoogleDrive"
+		}
+	],
+	"settings": {}
+}

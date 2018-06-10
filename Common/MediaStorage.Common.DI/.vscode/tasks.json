@@ -1,0 +1,23 @@
+{
+    "version": "2.0.0",
+    "tasks": [{
+        "label": "Build-DI (Debug)",
+        "type": "shell",
+        "command": "dotnet",
+        "args": [
+            "build",
+            "${workspaceRoot}/MediaStorage.Common.DI/MediaStorage.Common.DI.csproj",
+            "-c",
+            "Debug",
+            "--no-restore",
+            "-o",
+            "${workspaceRoot}/MediaStorage.Common.DI/bin/Debug/netcoreapp2.0"
+        ],
+        "problemMatcher": "$msCompile",
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        }
+    }
+]
+}
