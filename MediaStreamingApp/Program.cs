@@ -27,7 +27,6 @@ namespace MediaStreamingApp
                 .UseIISIntegration()
                 .UseStartup<Startup>()
                 .Build();
-
             host.Run();
         }*/
 
@@ -39,7 +38,7 @@ namespace MediaStreamingApp
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .UseKestrel( options => {
-                    options.Listen(IPAddress.Any, 5001);
+                    options.Listen(IPAddress.Any, 5000);
                 })
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseStartup<Startup>()
