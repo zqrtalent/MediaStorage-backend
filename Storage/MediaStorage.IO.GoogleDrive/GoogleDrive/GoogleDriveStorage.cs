@@ -118,11 +118,12 @@ namespace MediaStorage.IO.GoogleDrive
                         fileId = CreateFile(subFolders.Last(), _mimeTypeFile, parentId, uploadStream, uploadContentType);
                         if(string.IsNullOrEmpty(fileId))
                             throw new InvalidOperationException($"Unable to store file ({itemPath}) !");
+                        file = new GoogleDriveFile(_service, fileId, fileName);
                     }
                 }
             }
 
-            if(!string.IsNullOrEmpty(fileId))
+            if(file == null && !string.IsNullOrEmpty(fileId))
             {
                 if(uploadStream != null)
                     throw new NotSupportedException("Overwrite of existing file operation is not supported !");

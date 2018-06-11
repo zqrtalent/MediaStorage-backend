@@ -30,6 +30,11 @@ using MediaStorage.Data.WebApp.Entities;
 using MediaStorage.Data.WebApp.Context;
 using Microsoft.AspNetCore.Http;
 
+/*
+ASPNETCORE_ENVIRONMENT=Development dotnet run
+localhost:5000/api/v1/audiopackets/offset?mediaId=weerwe&offset=0&numpackets=1
+ */
+
 namespace MediaStreamingApp
 {
     public class Startup
@@ -104,6 +109,7 @@ namespace MediaStreamingApp
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
             loggerFactory.AddConsole(_configuration.GetSection("Logging"));
+            loggerFactory.AddFile("Logs/errorlog-{Date}.txt");
             loggerFactory.AddDebug();
 
             if (env.IsDevelopment())
@@ -122,7 +128,7 @@ namespace MediaStreamingApp
 
             app.UseMvc(routes =>
             {
-                routes.MapRoute( name: "default", template: "{controller=Home}/{action=Index}/{id?}");
+                routes.MapRoute(name: "default", template: "{controller=Home}/{action=Index}/{id?}");
             });
         }
     }

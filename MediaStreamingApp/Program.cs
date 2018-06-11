@@ -37,7 +37,7 @@ namespace MediaStreamingApp
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseKestrel( options => {
+                .UseKestrel(options => {
                     options.Listen(IPAddress.Any, 5000);
                 })
                 .UseContentRoot(Directory.GetCurrentDirectory())

@@ -61,3 +61,7 @@ MediaStreamingApp/secrets
 #Settings
 */*/appsettings.*.json
 */appsettings.*.json
+
+#Log folder
+*/Logs/*.txt
+*/*/Logs/*.txt
