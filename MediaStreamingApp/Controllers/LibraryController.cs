@@ -41,7 +41,7 @@ namespace MediaStreamingApp.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("media/upload")]
-        public ActionResult Upload([FromForm( Name = "media")]IFormFile file)
+        public ActionResult Upload([FromForm(Name = "media")]IFormFile file)
         {
             bool status = false;
             using (var reader = new StreamReader(file.OpenReadStream()))

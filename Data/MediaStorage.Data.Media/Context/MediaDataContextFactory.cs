@@ -15,7 +15,7 @@ namespace MediaStorage.Data.Media.Context
     {
         public MediaDataContext CreateDbContext(string[] args)
         {
-            var connectionString = "server=localhost;userid=root;pwd=mysqlpass;database=MediaDb;sslmode=none;";
+            var connectionString = "server=localhost;userid=root;pwd=mysqlpass;database=MediaDb;sslmode=none;";    
             var optionsBuilder = new DbContextOptionsBuilder<MediaDataContext>();
             optionsBuilder.UseMySql(connectionString);
 

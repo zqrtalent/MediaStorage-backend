@@ -7,7 +7,9 @@ namespace MediaStorage.IO
     {
         IStorageFile Open(string itemPath);
         IStorageFile OpenAndRestoreState(string itemPath, string stateJson);
+        IStorageFile StoreAndGetFileStream(string itemPath, Stream stream, string contentType);
         bool Store(string itemPath, Stream stream, string contentType);
+        IStorageFile StoreAndGetFileStream(string itemPath, IStorageFile storageFile, string contentType);
         bool Store(string itemPath, IStorageFile storageFile, string contentType);
         void Delete(string itemPath);
         long GetSize(string itemPath);

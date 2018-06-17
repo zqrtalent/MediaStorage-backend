@@ -11,6 +11,8 @@ using MediaStorage.Data.Media.Entities;
 using MediaStorage.Common.Dtos.Upload;
 using MediaStorage.Common.Dtos.Encoder;
 using MediaStorage.Encoder.Extensions;
+using System.Text;
+using Newtonsoft.Json;
 
 namespace MediaStorage.Core.Services
 {
@@ -142,7 +144,10 @@ namespace MediaStorage.Core.Services
                             index++;
                         }
 
-                        CopyFileStream(_localStorage, mediaFile.TempUrl, _mediaStorage, mediaFilePath, MediaFormatExtension.GetMimeType(mediaFile.Format));
+                        // Copy media file from temporary directory to the media storage specific directory.
+                        //CopyFileStream(_localStorage, mediaFile.TempUrl, _mediaStorage, mediaFilePath, MediaFormatExtension.GetMimeType(mediaFile.Format));
+                        var encoderFilePath = $"{mediaFilePath}.enc.json";
+                        SyncMediaFileStream(mediaFile, mediaFilePath, encoderFilePath);
 
                         mediaFile.Url = mediaFilePath;
                         _mediaDataContext.Update(mediaFile);
@@ -199,6 +204,47 @@ namespace MediaStorage.Core.Services
             {
                 to.Store(pathTo, file, mimeType);
             }
+        }
+
+        private void SyncMediaFileStream(MediaFile mediaFile, string copyAsFilePath, string encoderFilePath)
+        {
+            var fileStates = new MediaFileStateInfos
+            {
+                MediaFileStateJson = string.Empty,
+                EncoderFileStateJson = string.Empty
+            };
+
+            using (var file = _localStorage.Open(mediaFile.TempUrl))
+            {
+                // Generate encoder state and store as json file.
+                if(!string.IsNullOrEmpty(encoderFilePath))
+                {
+                    var encoderStateJson = MediaEncoderExtension.GenerateEncoderState(mediaFile.Format, file, true);
+                    if(!string.IsNullOrEmpty(encoderStateJson))
+                    {
+                        using(var mem = new MemoryStream(ASCIIEncoding.UTF8.GetBytes(encoderStateJson)))
+                        {
+                            using( var encoderFile = _mediaStorage.StoreAndGetFileStream(encoderFilePath, mem, "text/json"))
+                            {
+                                fileStates.EncoderFileStateJson = encoderFile.SaveStateAsJson();
+                            }
+                        }
+                    }
+                }
+
+                using(var mediaFileStream = _mediaStorage.StoreAndGetFileStream(copyAsFilePath, file, 
+                    MediaFormatExtension.GetMimeType(mediaFile.Format)))
+                {
+                    fileStates.MediaFileStateJson = mediaFileStream.SaveStateAsJson();
+                }
+            }
+
+            // Add MediaFileStateInfo entry.
+            _mediaDataContext.Add(new MediaFileStateInfo
+            {
+                MediaFileId = mediaFile.Id,
+                StateInfoJson = JsonConvert.SerializeObject(fileStates)
+            }); 
         }
         
         protected IEnumerable<MediaImage> ResizeAndCopyImage(IStorageFile imageStream, string savePath, string imageName, string mimeType)

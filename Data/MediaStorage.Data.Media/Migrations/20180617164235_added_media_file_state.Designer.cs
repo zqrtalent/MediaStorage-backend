@@ -12,9 +12,10 @@ using System;
 namespace MediaStorage.Data.Media.Migrations
 {
     [DbContext(typeof(MediaDataContext))]
-    partial class MediaDataContextModelSnapshot : ModelSnapshot
+    [Migration("20180617164235_added_media_file_state")]
+    partial class added_media_file_state
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

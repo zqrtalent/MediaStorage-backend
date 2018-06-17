@@ -1,5 +1,6 @@
 ﻿using MediaStorage.Encoder;
 using MediaStorage.Encoder.Mp3;
+using MediaStorage.IO;
 
 namespace MediaStorage.Encoder.Extensions
 {
@@ -18,6 +19,19 @@ namespace MediaStorage.Encoder.Extensions
                     }
             }
             return encoder;
+        }
+
+        public static string GenerateEncoderState(string format, IStorageFile mediaFile, bool analyzeAllFrames)
+        {
+            string stateJson = string.Empty;
+            using(var encoder = EncoderByMediaType(format))
+            {
+                if(encoder.Init(mediaFile, false))
+                {
+                    encoder.SaveStateIntoJson(analyzeAllFrames, out stateJson);
+                }
+            }
+            return stateJson;
         }
     }
 }

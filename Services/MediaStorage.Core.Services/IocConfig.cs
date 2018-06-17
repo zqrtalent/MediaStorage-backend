@@ -14,6 +14,7 @@ namespace MediaStorage.Core.Services
             di.AddPerThread<IImageResourceService, ImageResourceService>();
             di.AddPerThread<IStreamingUserService, StreamingUserService>();
             di.AddPerThread<IStreamingUserSessionService, StreamingUserSessionService>();
+            di.AddPerThread<IStreamingUserCacheService, StreamingUserCacheService>();
         }
     }
 }

@@ -9,7 +9,7 @@ namespace MediaStorage.Encoder
     public interface IMediaEncoder : IDisposable
     {
         bool Init(IStorageFile stream, bool readTags, string stateJson = null);
-        bool SaveStateIntoJson(out string stateJson);
+        bool SaveStateIntoJson(bool analyzeAllFrames, out string stateJson);
         IMediaMetadata GetMetadata();
         IEnumerable<AttachedPicture> AttachedPictures { get; }
         ulong GetMediaPacketsCount();

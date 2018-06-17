@@ -29,6 +29,7 @@ namespace MediaStorage.Data.Media.Context
         public DbSet<MediaImageGroup> MediaImageGroups { get; set; }
         public DbSet<Genre> Genre { get; set; }
         public DbSet<MediaUpload> MediaUpload { get; set; }
+        public DbSet<MediaFileStateInfo> MediaFileState { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

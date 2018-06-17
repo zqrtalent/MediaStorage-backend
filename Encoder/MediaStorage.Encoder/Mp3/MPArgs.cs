@@ -1,11 +1,4 @@
 ﻿using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using MediaStorage.IO;
-using MediaStorage.Common.Dtos.Encoder;
-using MediaStorage.Common.Dtos.Audio;
-using MediaStorage.Encoder.Mp3.Tags;
 using Newtonsoft.Json;
 
 namespace MediaStorage.Encoder.Mp3
@@ -18,17 +11,6 @@ namespace MediaStorage.Encoder.Mp3
         [JsonProperty("ffo")]
         public long FirstFrameOffset { get; set; }       // First frame file offset
 
-        [JsonProperty("sf")]
-        public ulong StartFrame { get; set; }
-
-        [JsonProperty("sp")]
-        public ulong StartPos { get; set; }
-
-        [JsonProperty("ef")]
-        public ulong EndFrame { get; set; }
-
-        [JsonProperty("ep")]
-        public ulong EndPos { get; set; }
 
         [JsonProperty("sr")]
         public int SampleRate { get; set; }              // Samplerate
@@ -65,13 +47,14 @@ namespace MediaStorage.Encoder.Mp3
 
         [JsonProperty("toc")]
         public byte[] TOC { get; set; }                 // Xing - Table of contents
+
+         [JsonProperty("frfo")]
+        public long[] FramesFileOffsets { get; set; }   // File offset of each frame offset.
      
         public MPArgs()
         {
             CurrentPos = 0;
             FirstFrameOffset = 0;
-            StartPos = 0;
-            EndPos = 0;
             AudioBits = 16;
             SampleRate = 44100;
             Channels = 2;

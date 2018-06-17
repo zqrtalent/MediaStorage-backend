@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 
 namespace MediaStorage.Encoder.Mp3
 {
-    internal class frame
+    internal class Frame
     {
         [JsonProperty("st")]
         public long stereo { get; set; }

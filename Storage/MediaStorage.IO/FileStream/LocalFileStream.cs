@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using IO = System.IO;
 
 namespace MediaStorage.IO.FileStream
@@ -55,6 +56,8 @@ namespace MediaStorage.IO.FileStream
         public byte[] ReadAllBytes()
         {
             var arrContent = new byte[_fileStream.Length];
+            if(_fileStream.CanSeek)
+                _fileStream.Seek(0, SeekOrigin.Begin);
             return (_fileStream.Read(arrContent, 0, arrContent.Length) == arrContent.Length) ? arrContent : null;
         }
 

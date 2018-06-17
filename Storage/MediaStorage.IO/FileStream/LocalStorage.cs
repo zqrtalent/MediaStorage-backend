@@ -33,6 +33,15 @@ namespace MediaStorage.IO.FileStream
             return fullPath;
         }
 
+        public IStorageFile StoreAndGetFileStream(string itemPath, Stream stream, string contentType)
+        {
+            if(Store(itemPath, stream, contentType))
+            {
+                return new LocalFileStream(itemPath, FileMode.Open);
+            }
+            return null;
+        }
+
         public bool Store(string itemPath, IStorageFile storageFile, string contentType)
         {
             // long fileLength = storageFile.Length;
@@ -49,6 +58,11 @@ namespace MediaStorage.IO.FileStream
             //     offset += read;
             // }
 
+            throw new NotImplementedException();
+        }
+
+        public IStorageFile StoreAndGetFileStream(string itemPath, IStorageFile storageFile, string contentType)
+        {
             throw new NotImplementedException();
         }
 
@@ -146,7 +160,7 @@ namespace MediaStorage.IO.FileStream
 
         public IStorageFile OpenAndRestoreState(string itemPath, string stateJson)
         {
-            throw new NotImplementedException();
+            return Open(itemPath);
         }
 
         public bool Exists(string path)

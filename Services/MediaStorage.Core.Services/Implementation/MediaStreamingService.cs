@@ -20,9 +20,9 @@ namespace MediaStorage.Core.Services
         private readonly IStreamingUserSessionService _userSession;
         private readonly IMediaDataContext _mediaDataContext;
         private readonly IStorage _storage;
-        private readonly IMemoryCache _cacheService;
+        private readonly IStreamingUserCacheService _cacheService;
 
-        public MediaStreamingService(IStreamingUserSessionService userSession, IStorage mediaStorage, IMediaDataContext dataContext, IMemoryCache cacheService)
+        public MediaStreamingService(IStreamingUserSessionService userSession, IStorage mediaStorage, IMediaDataContext dataContext, IStreamingUserCacheService cacheService)
         {
             _userSession = userSession;
             _mediaDataContext = dataContext;
@@ -55,6 +55,32 @@ namespace MediaStorage.Core.Services
         {
             return ReadMediaPackets(sessionKey, songId, (encoder) => encoder.ReadPacketsByTime((uint)msecOffset, numPackets));
         }
+
+        private string ReadMediaFileEncoderStateJson(MediaFile mediaFile, out string mediaFileStateJson)
+        {
+             var fileStateInfosJson = (from ms in _mediaDataContext.Get<MediaFileStateInfo>()
+                                    where ms.MediaFileId == mediaFile.Id
+                                    select ms.StateInfoJson).SingleOrDefault();
+
+            string encoderStateInfoJson = string.Empty;
+            if(!string.IsNullOrEmpty(fileStateInfosJson))
+            {
+                var fileStateInfos = JsonConvert.DeserializeObject<MediaFileStateInfos>(fileStateInfosJson);
+                using(var encoderFile = _storage.OpenAndRestoreState($"{mediaFile.Url}.enc.json", 
+                    fileStateInfos.EncoderFileStateJson))
+                {
+                    encoderStateInfoJson = System.Text.Encoding.UTF8.GetString(encoderFile.ReadAllBytes());
+                }
+
+                mediaFileStateJson = fileStateInfos.MediaFileStateJson;
+            }
+            else
+            {
+                mediaFileStateJson = string.Empty;
+            }
+
+            return encoderStateInfoJson;
+        }
         
         /// <summary>
         /// Reads media packets passing delegate to read packets using different logic.
@@ -75,12 +101,6 @@ namespace MediaStorage.Core.Services
             if (mediaFile == null)
                 return null;
 
-            // var session = (from ss in _mediaDataContext.Get<StreamingSession>()
-            //                where ss.Id == sessionId && ss.IsActive == true
-            //                select ss).FirstOrDefault();
-            // if (session == null)
-            //     throw new InvalidOperationException("Session not exists !");
-
             Guid playingMediaId = Guid.Empty;
             int playingAtMSec = 0;
             if(!_userSession.GetSessionInfo(sessionKey, out playingMediaId, out playingAtMSec))
@@ -88,20 +108,32 @@ namespace MediaStorage.Core.Services
                 throw new InvalidOperationException("Session not exists !");
             }
 
-            string fileStateJson = string.Empty, encoderStateJson = string.Empty;
+            string encoderStateJson = string.Empty, mediaFileStateJson = string.Empty;
             AudioPackets packets = null;
             int currentMSec = 0;
 
             // Check media of state json.
             if(playingMediaId == gSongId)
             {
-                fileStateJson = ReadFileStateFromCache<string>(sessionKey);
-                encoderStateJson =  ReadEncoderStateFromCache<string>(sessionKey);
+                mediaFileStateJson = _cacheService.ReadFileState<string>(sessionKey);
+                encoderStateJson =  _cacheService.ReadEncoderState<string>(sessionKey);
+
+                if(string.IsNullOrEmpty(encoderStateJson))
+                {
+                    encoderStateJson = ReadMediaFileEncoderStateJson(mediaFile, out mediaFileStateJson);
+                    _cacheService.SaveEncoderState(sessionKey, encoderStateJson);
+                }
+            }
+            else
+            {
+                encoderStateJson = ReadMediaFileEncoderStateJson(mediaFile, out mediaFileStateJson);
+                _cacheService.SaveEncoderState(sessionKey, encoderStateJson);
+                _cacheService.SaveFileState(sessionKey, mediaFileStateJson);
             }
 
-            using (var media =  string.IsNullOrEmpty(fileStateJson) ? 
+            using (var media =  string.IsNullOrEmpty(mediaFileStateJson) ? 
                                 _storage.Open(mediaFile.Url) : 
-                                _storage.OpenAndRestoreState(mediaFile.Url, fileStateJson))
+                                _storage.OpenAndRestoreState(mediaFile.Url, mediaFileStateJson))
             {
                 IMediaEncoder encoder = MediaEncoderExtension.EncoderByMediaType(mediaFile.Format);
                 if (encoder == null)
@@ -112,53 +144,27 @@ namespace MediaStorage.Core.Services
                     packets = funcReadPackets.Invoke(encoder);
                     if (packets != null)
                     {
-                        if(encoder.SaveStateIntoJson(out encoderStateJson))
-                        {
-                            // Save encoder state in cache.
-                            SaveEncoderStateInCache(sessionKey, encoderStateJson);
-                        }
+                        // if(encoder.SaveStateIntoJson(out encoderStateJson))
+                        // {
+                        //     // Save encoder state in cache.
+                        //     SaveEncoderStateInCache(sessionKey, encoderStateJson);
+                        // }
 
                         currentMSec = (int)encoder.CurrentMs;
                     }
                 }
                 
-                // Save file state in cache.
-                SaveFileStateInCache(sessionKey, media.SaveStateAsJson());
+                // Save media file state in cache.
+                if(string.IsNullOrEmpty(mediaFileStateJson))
+                    _cacheService.SaveFileState(sessionKey, media.SaveStateAsJson());
+
+                // ???
+                //encoder.Dispose();
             }
 
             // Update playing session info.
             _userSession.UpdateSessionInfo(sessionKey, gSongId, currentMSec);
             return packets;
         }
-
-        #region Cache functionality
-        private T ReadFileStateFromCache<T>(string sessionKey) where T: class
-        {
-            var stateJson = _cacheService.Get<string>($"{sessionKey}-mediafilestate");
-            if(typeof(T) == typeof(string))
-                return stateJson as T;
-            return JsonConvert.DeserializeObject<T>(stateJson);
-        }
-
-        private void SaveFileStateInCache<T>(string sessionKey, T state) where T : class
-        {
-            string stateJson = typeof(T) == typeof(string) ? state as string : JsonConvert.SerializeObject(state);
-            _cacheService.Set($"{sessionKey}-mediafilestate", stateJson);
-        }
-
-        private T ReadEncoderStateFromCache<T>(string sessionKey) where T: class
-        {
-            var stateJson = _cacheService.Get<string>($"{sessionKey}-encoderstate");
-            if(typeof(T) == typeof(string))
-                return stateJson as T;
-            return JsonConvert.DeserializeObject<T>(stateJson);
-        }
-
-        private void SaveEncoderStateInCache<T>(string sessionKey, T state) where T : class
-        {
-            string stateJson = typeof(T) == typeof(string) ? state as string : JsonConvert.SerializeObject(state);
-            _cacheService.Set($"{sessionKey}-encoderstate", stateJson);
-        }
-        #endregion
     }
 }

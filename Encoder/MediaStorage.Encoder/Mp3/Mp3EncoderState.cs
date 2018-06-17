@@ -1,11 +1,4 @@
 ﻿using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using MediaStorage.IO;
-using MediaStorage.Common.Dtos.Encoder;
-using MediaStorage.Common.Dtos.Audio;
-using MediaStorage.Encoder.Mp3.Tags;
 using Newtonsoft.Json;
 
 namespace MediaStorage.Encoder.Mp3
@@ -43,6 +36,6 @@ namespace MediaStorage.Encoder.Mp3
         public MPArgs Args { get; set; }
 
         [JsonProperty("frm")]
-        public frame frame { get; set; }
+        public Frame frame { get; set; }
     }
 }

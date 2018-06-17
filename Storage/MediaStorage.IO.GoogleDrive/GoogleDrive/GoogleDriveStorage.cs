@@ -132,10 +132,26 @@ namespace MediaStorage.IO.GoogleDrive
             return file;
         }
 
+        public IStorageFile StoreAndGetFileStream(string itemPath, Stream stream, string contentType =  "application/octet-stream")
+        {
+            return OpenAndUpload(itemPath, true, stream, contentType);
+        }
+
         public bool Store(string itemPath, Stream stream, string contentType = "application/octet-stream")
         {
             var file = OpenAndUpload(itemPath, true, stream, contentType);
             return (file != null);
+        }
+
+        public IStorageFile StoreAndGetFileStream(string itemPath, IStorageFile storageFile, string contentType = "application/octet-stream")
+        {
+            IStorageFile file = null;
+            var data = storageFile.ReadAllBytes();
+            using(var mem = new MemoryStream(data))
+            {
+                file = StoreAndGetFileStream(itemPath, mem, contentType);
+            }
+            return file;
         }
 
         public bool Store(string itemPath, IStorageFile storageFile, string contentType = "application/octet-stream")

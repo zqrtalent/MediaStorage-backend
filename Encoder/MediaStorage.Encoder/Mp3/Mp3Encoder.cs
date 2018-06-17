@@ -24,8 +24,6 @@ namespace MediaStorage.Encoder.Mp3
                 Init(fileStream, readTags);
         }
 
-        private IList<long> _frameOffsets;
-
         public bool Init(IStorageFile stream, bool readTags, string stateJson = null)
         {
             if(stream == null)
@@ -53,57 +51,37 @@ namespace MediaStorage.Encoder.Mp3
                     oldhead = state.oldhead;
                     ssize = state.ssize;
                     syncword = state.syncword;
-
-                    stateIsRestored = true;
+                    
+                    _frameOffsets = (state.Args.FramesFileOffsets?.ToList() ?? null);
+                    // Restore full offset instead of relative offset value.
+                    if(_frameOffsets != null)
+                    {
+                        for(int i=1; i<_frameOffsets.Count; i++)
+                            _frameOffsets[i] += _frameOffsets[i-1];
+                    }
 
                     // Seek to the beggining of the current frame.
                     _fileStream.Seek(state.FileOffset, SeekOrigin.Begin);
-                    // Read current frame data.
-                    ReadFrame();
+
+                    // Read current frame data.                    
+                    //ReadFrame();
+
+                    stateIsRestored = true;
                 }
             }
 
             if(!stateIsRestored)
                 ReadFrame();
-            Args.SampleRate = freqs[fr.sampling_frequency];
-
-            // Temp
-            //var framesOffsets = System.IO.File.ReadAllText(@"/Users/ZqrTalent/Desktop/Dev/1.txt");
-            //this._frameOffsets = framesOffsets.Split(',').Select(x => long.Parse(x)).ToList();
-
-            //if (fr.single >= 0)
-            //    Args.ForceMono = 1;
-            //if (Args.ForceMono != 0)
-            //{
-            //    if (fr.single < 0)
-            //        fr.single = 3;
-            //    Args.Channels = 1;
-            //}
-
-            //if (fr.down_sample == 1)
-            //{
-            //    Args.SampleRate = Args.SampleRate / 2;
-            //    Args.ForceFreq = Args.SampleRate;
-            //}
-
-            //if (fr.down_sample == 2)
-            //{
-            //    Args.SampleRate = Args.SampleRate / 4;
-            //    Args.ForceFreq = Args.SampleRate;
-            //}
-
-            //if ((Args.SampleRate >= 48000)  && (Args.OutputMode == omMMSystem)) 
-            //{
-            //        fr.down_sample = 1;
-            //        Args.SampleRate = Args.SampleRate / 2;
-            //        Args.ForceFreq = Args.SampleRate;
-            //}
             return true;
         }
 
-        public bool SaveStateIntoJson(out string stateJson)
+        public bool SaveStateIntoJson(bool analyzeAllFrames, out string stateJson)
         {
             long filePos = _fileStream.Seek(0, SeekOrigin.Current) - (framesize + 4/*header size*/);
+
+            if(analyzeAllFrames)
+                this.AnalyzeAllFrames();
+
             var state = new Mp3EncoderState
             {
                 Args = Args,
@@ -145,40 +123,19 @@ namespace MediaStorage.Encoder.Mp3
         #region Variables
         private IStorageFile _fileStream;
         private bool _readTags = false;
+        private IList<long> _frameOffsets; // Frame file offset.
+        private Frame fr = new Frame();
+        private MPArgs Args = new MPArgs();
 
-        // Header mask definition
-        private const long HDRCMPMASK = 0xfffffd00;
-        private const long MAXFRAMESIZE = 1792;
-        private const long MPG_MD_STEREO = 0;
-        private const long MPG_MD_JOINT_STEREO = 1;
-        private const long MPG_MD_DUAL_CHANNEL = 2;
-        private const long MPG_MD_MONO = 3;
-        private const int MAX_RESYNC = 0x20000;
+        internal void SetFrameFileOffsets(IEnumerable<long> fileOffsets) { this.Args.FramesFileOffsets = fileOffsets?.ToArray() ?? null; }
 
-        private int[] freqs = { 44100, 48000, 32000, 22050, 24000, 16000, 11025, 12000, 8000 };
-        private int[,,] BitRateIndex = new int[2, 3, 15]
-        {
-            {
-                {0,32,64,96,128,160,192,224,256,288,320,352,384,416,448},
-                {0,32,48,56,64,80,96,112,128,160,192,224,256,320,384},
-                {0,32,40,48,56,64,80,96,112,128,160,192,224,256,320}
-            },
-            {
-                {0,32,48,56,64,80,96,112,128,144,160,176,192,224,256},
-                {0,8,16,24,32,40,48,56,64,80,96,112,128,144,160},
-                {0,8,16,24,32,40,48,56,64,80,96,112,128,144,160}
-            }
-        };
-
-        private double[,] ms_per_frame_array = new double[3, 3] { { 8.707483f, 8.0f, 12.0f }, { 26.12245f, 24.0f, 36.0f }, { 26.12245f, 24.0f, 36.0f } };
-        // Samples per Frame: 1. index = LSF (MPEG 1 - MPEG 2, 2.5 ), 2. index = Layer (Layer1, Layer2, Layer3)
-        private int[,] samplesperframes = new int[2, 3] { { 384, 1152, 1152 }, { 384, 1152, 576 }};
-
-        private byte[] bsspace_1 = new byte[MAXFRAMESIZE + 512];
-        private byte[] bsspace_2 = new byte[MAXFRAMESIZE + 512];
+        private bool framebuffIsEmpty = true;
+        private byte[] bsspace_1 = new byte[Constants.MAXFRAMESIZE + 512];
+        private byte[] bsspace_2 = new byte[Constants.MAXFRAMESIZE + 512];
         private byte[] bsbuf;
         private byte[] bsbufold;
 
+        public long CurrentFrameFileOffset { get; private set; } // Current frame file offset starting with frame header bytes.
         private int framesize { get; set; }
         private int fsize { get; set; }
         private int fsizeold { get; set; }
@@ -187,11 +144,31 @@ namespace MediaStorage.Encoder.Mp3
         private ulong oldhead { get; set; }
         private ulong firsthead { get; set; }
         private ulong syncword { get; set; }
+        #endregion
 
-        private frame fr = new frame();
+        #region Mp3 info properties
+        public long SampleRate => Constants.freqs[fr.sampling_frequency];
+        public long Framesize => framesize;
+        public int SamplesPerFrame => Constants.samplesperframes[fr.lsf, fr.lay - 1];    
+        public long MaxFrames => (Args.IsVBR ? Args.NumFrames : (_fileStream.Length - Args.FirstFrameOffset) / (Framesize + 5 - fr.padding));
+        // Returns the milli seconds one frame has
+        public double Frame2ms => Constants.ms_per_frame_array[1, fr.sampling_frequency];
+        public double TotalMs => (MaxFrames * Frame2ms);
+        public int TotalSec => (int)(TotalMs / 1000.0);
+        public uint CurrentMs => (uint)(Args.CurrentPos * Frame2ms);
+        public int Bitrate => Constants.BitRateIndex[fr.lsf, fr.lay - 1, fr.bitrate_index] * 1000;
+        #endregion
 
-        private MPArgs Args = new MPArgs();
-        
+        #region ID3v2 tags.
+        private IEnumerable<AttachedPicture> _attachedPictures;
+        public bool HasAttachedPicture => _attachedPictures?.Any() ?? false;
+        public string Album { get; protected set; }
+        public string Artist { get; protected set; }
+        public string Song { get; protected set; }
+        public string Composer { get; protected set; }
+        public string Genre { get; protected set; }
+        public string Track { get; protected set; }
+        public string Year { get; protected set; }
         #endregion
 
         public ulong GetMediaPacketsCount()
@@ -201,14 +178,14 @@ namespace MediaStorage.Encoder.Mp3
 
         public AudioPackets ReadPackets(int offset, int numPackets)
         {
-            if (!Seek_StreamByPos((long)offset))
+            if (!Seek_StreamByPos((long)offset, false))
                 return null;
             return ReadFrames(numPackets);
         }
 
         public AudioPackets ReadPacketsByTime(ulong milliSecond, int numPackets)
         {
-            if (!Seek_Stream(milliSecond))
+            if (!Seek_Stream(milliSecond, false))
                 return null;
             return ReadFrames(numPackets);
         }
@@ -216,23 +193,43 @@ namespace MediaStorage.Encoder.Mp3
         public AudioPackets ReadFrames(int packetsCt)
         {
             bool isEof = false;
-            int packets = 1, frameSizeWithHeader = framesize + 4;
+            int packets = 0, frameSizeWithHeader = framesize + 4;
+            var mediaFrames = new List<AudioPacket>();
+            byte[] frameData = null;
 
+            // Calculate read buffer length in order to read all the freames in only one IO-READ call.
+            if(packetsCt > 1)
+            {
+                if((_frameOffsets?.Count ?? 0) > 0)
+                {
+                    bool lastPacket = ((int)Args.CurrentPos) + packetsCt >= _frameOffsets.Count;
+                    long lastPacketOffset = lastPacket ? _frameOffsets.Last() + Constants.MAXFRAMESIZE : 
+                        _frameOffsets[(int)(Args.CurrentPos + (ulong)packetsCt)];
+                    int readBufferSize = (int)(lastPacketOffset - _frameOffsets[(int)Args.CurrentPos]);
+                    _fileStream.UseReadBuffer(readBufferSize);
+                }
+                else
+                    _fileStream.UseReadBuffer(frameSizeWithHeader * packetsCt);
+            }
+
+            // Read frame in buffer first.
+            if(framebuffIsEmpty)
+            {
+                ReadFrame();
+                Args.CurrentPos ++;
+            }
+            
             // Read current frame packet data.
-            byte[] frameData = new byte[frameSizeWithHeader];
+            frameData = new byte[frameSizeWithHeader];
             Array.Copy(bsbuf, 512, frameData, 0, frameSizeWithHeader);
 
-            var mediaFrames = new List<AudioPacket>();
             mediaFrames.Add(new AudioPacket()
             {
                 Data = frameData,
                 SamplesPerFrame = Args.IsVBR ? SamplesPerFrame : 0
             });
-
-            if(packetsCt > 1)
-                _fileStream.UseReadBuffer(frameSizeWithHeader * packetsCt);
-            //Args.CurrentPos++;
-
+            packets ++;
+            
             while (packets < packetsCt)
             {
                 if(((long)Args.CurrentPos) >= MaxFrames )
@@ -275,12 +272,12 @@ namespace MediaStorage.Encoder.Mp3
             };
         }
 
-        public bool Seek_Stream(ulong Position)
+        public bool Seek_Stream(ulong Position, bool readFrame = true)
         {
-            return Seek_StreamByPos((long)(Position / Frame2ms));
+            return Seek_StreamByPos((long)(Position / Frame2ms), readFrame);
         }
 
-        private bool Seek_StreamByPos(long pos/*packet position*/)
+        public bool Seek_StreamByPos(long pos/*packet position*/, bool readFrame = true)
         {
             long Posi = pos;
             long OldPosi, XPosi;
@@ -319,25 +316,32 @@ namespace MediaStorage.Encoder.Mp3
                     Args.CurrentPos = (ulong)Posi;
                 }
                 
-                int Res;
-            read_again:
-                Res = ReadFrame();
-                if (Res != 0)
-                    Args.CurrentPos++;
-                if (Res == 0 && Res != -2)
-                    goto read_again;
+                if(readFrame)
+                {
+                    int Res;
+                read_again:
+                    Res = ReadFrame();
+                    if (Res != 0)
+                        Args.CurrentPos++;
+                    if (Res == 0 && Res != -2)
+                        goto read_again;
+                }
+                else
+                {
+                    framebuffIsEmpty = true; // Read frame of current packet.
+                }
+
                 return true;
             }
+            
             return false;
         }
 
         public int ReadFrame()
         {
             byte[] ssave = new byte[34];
-            int numread = 0;
-            int tryme = 0;
-            byte[] hbuf = new byte[8];
-            byte[] headbuf = new byte[4];
+            int numread = 0, tryme = 0;
+            byte[] hbuf = new byte[8], headbuf = new byte[4];
             ulong newhead = 0;
             bool checkVbr = false;
 
@@ -350,7 +354,7 @@ namespace MediaStorage.Encoder.Mp3
             init_resync:
                 if (/*!firsthead && */!head_check(newhead))
                 {
-                    if ((newhead & 0x49443300) == 0x49443300) // ID3
+                    if ((newhead & Constants.ID3) == Constants.ID3) // ID3
                     {
                         if (!SkipID3v2Tag(hbuf, ref newhead))
                         {
@@ -361,7 +365,7 @@ namespace MediaStorage.Encoder.Mp3
                     }
                     int i;
                     {
-                        for (i = 0; i < MAX_RESYNC; i++)
+                        for (i = 0; i < Constants.MAX_RESYNC; i++)
                         {
                             Array.Copy(hbuf, 0, hbuf, 1, 3);
 
@@ -375,7 +379,7 @@ namespace MediaStorage.Encoder.Mp3
                             newhead &= 0xffffffff;
                             if (head_check(newhead)) break;
                         }
-                        if (i == MAX_RESYNC)
+                        if (i == Constants.MAX_RESYNC)
                             return 0;
                     }
                 }
@@ -396,13 +400,15 @@ namespace MediaStorage.Encoder.Mp3
                             newhead = ((newhead << 8) | hbuf[3]) & 0xffffffff;
                             if (oldhead == 0) goto init_resync;
                         }
-                        while ((newhead & HDRCMPMASK) != (oldhead & HDRCMPMASK) && (newhead & HDRCMPMASK) != (firsthead & HDRCMPMASK));
+                        while ((newhead & Constants.HDRCMPMASK) != (oldhead & Constants.HDRCMPMASK) && 
+                            (newhead & Constants.HDRCMPMASK) != (firsthead & Constants.HDRCMPMASK));
                     }
                     else
-                        return (0);
+                        return 0;
                 }
-                if (firsthead == 0)
-                    firsthead = newhead;
+
+                 if (firsthead == 0)
+                     firsthead = newhead;
 
                 if (!decode_header(newhead, checkVbr))
                 {
@@ -432,54 +438,26 @@ namespace MediaStorage.Encoder.Mp3
             if (numread == 0)
                 return -2;
 
-            //framesize += 4; // header 4 bytes.
-
             // Copy header bytes.
             Array.Copy(headbuf, 0, bsbuf, 512, 4);
-
             if (numread != fsize)
             {
                 Array.Clear(bsbuf, numread + 516, fsize - numread);
-                //memset(bsbuf + numread, 0, fsize - numread);
             }
 
-            //bitindex = 0;
-            //wordpointer = (unsigned char*)bsbuf;
+            CurrentFrameFileOffset = _fileStream.Seek(0, SeekOrigin.Current) - framesize - 4 /*frame header*/;
             if (Args.CurrentPos == 0 && Args.FirstFrameOffset == 0)
             {
-                var currOffset = _fileStream.Seek(0, SeekOrigin.Current);
-                Args.FirstFrameOffset = currOffset - framesize - 4 /*frame header*/;
-                //_fileStream.Seek(currOffset, SeekOrigin.Current);
+                Args.FirstFrameOffset = CurrentFrameFileOffset;
             }
+
+            // Update sample rate value after reading the frame.
+            if(Args.SampleRate == 0 || Args.IsVBR)
+                Args.SampleRate = Constants.freqs[fr.sampling_frequency];
+
+            this.framebuffIsEmpty = false;
             return 1;
         }
-
-        #region Mp3 info properties
-        public long GetSampleRate => freqs[fr.sampling_frequency];
-        public long MaxFrames => (Args.IsVBR ? Args.NumFrames : (_fileStream.Length - Args.FirstFrameOffset) / (Framesize + 5 - fr.padding));
-        public long Framesize => framesize;
-        public int SamplesPerFrame => samplesperframes[fr.lsf, fr.lay - 1];
-
-        // Returns the milli seconds one frame has
-        public double Frame2ms => ms_per_frame_array[1, fr.sampling_frequency];
-        public double TotalMs => (MaxFrames * Frame2ms);
-        public int TotalSec => (int)(TotalMs / 1000.0);
-        public uint CurrentMs => (uint)(Args.CurrentPos * Frame2ms);
-        public int Bitrate => BitRateIndex[fr.lsf, fr.lay - 1, fr.bitrate_index] * 1000;
-        #endregion
-
-        #region ID3v2 tags.
-        private IEnumerable<AttachedPicture> _attachedPictures;
-        public bool HasAttachedPicture => _attachedPictures?.Any() ?? false;
-
-        public string Album { get; protected set; }
-        public string Artist { get; protected set; }
-        public string Song { get; protected set; }
-        public string Composer { get; protected set; }
-        public string Genre { get; protected set; }
-        public string Track { get; protected set; }
-        public string Year { get; protected set; }
-        #endregion
 
         private bool head_read(byte[] hbuf, ref ulong newhead)
         {
@@ -538,9 +516,7 @@ namespace MediaStorage.Encoder.Mp3
                 fr.error_protection = (long)((newhead >> 16) & 0x1) ^ 0x1;
             }
 
-            // NEW::: 
-            fr.error_protection = ((newhead >> 16) & 0x1) == 0 ? 1 : 0;
-            // END OF NEW:::
+            fr.error_protection = ((newhead >> 16) & 0x1) == 0 ? 1 : 0; 
             fr.bitrate_index = (long)((newhead >> 12) & 0xf);
             fr.padding = (long)((newhead >> 9) & 0x1);
             fr.extension = (long)((newhead >> 8) & 0x1);
@@ -549,7 +525,7 @@ namespace MediaStorage.Encoder.Mp3
             fr.copyright = (long)((newhead >> 3) & 0x1);
             fr.original = (long)((newhead >> 2) & 0x1);
             fr.emphasis = (long)newhead & 0x3;
-            fr.stereo = (fr.mode == MPG_MD_MONO) ? 1 : 2;
+            fr.stereo = (fr.mode == Constants.MPG_MD_MONO) ? 1 : 2;
 
             oldhead = newhead;
 
@@ -563,16 +539,16 @@ namespace MediaStorage.Encoder.Mp3
             switch (fr.lay)
             {
                 case 1:
-                    fr.jsbound = (fr.mode == MPG_MD_JOINT_STEREO) ? (fr.mode_ext << 2) + 4 : 32;
-                    framesize = BitRateIndex[fr.lsf, 0, fr.bitrate_index] * 12000;
-                    framesize /= (int)freqs[fr.sampling_frequency];
+                    fr.jsbound = (fr.mode == Constants.MPG_MD_JOINT_STEREO) ? (fr.mode_ext << 2) + 4 : 32;
+                    framesize = Constants.BitRateIndex[fr.lsf, 0, fr.bitrate_index] * 12000;
+                    framesize /= (int)Constants.freqs[fr.sampling_frequency];
                     framesize = (int)((framesize + fr.padding) << 2) - frameSizeSub;
                     break;
                 case 2:
                     //GetLayer2();
-                    fr.jsbound = (fr.mode == MPG_MD_JOINT_STEREO) ? (fr.mode_ext << 2) + 4 : 0/*fr.II_sblimit*/;
-                    framesize = BitRateIndex[fr.lsf, 1, fr.bitrate_index] * 144000;
-                    framesize /= (int)freqs[fr.sampling_frequency];
+                    fr.jsbound = (fr.mode == Constants.MPG_MD_JOINT_STEREO) ? (fr.mode_ext << 2) + 4 : 0/*fr.II_sblimit*/;
+                    framesize = Constants.BitRateIndex[fr.lsf, 1, fr.bitrate_index] * 144000;
+                    framesize /= (int)Constants.freqs[fr.sampling_frequency];
                     framesize += (int)(fr.padding - frameSizeSub);
                     //framesize = 144000 * BitRateIndex[fr.lsf, 2, fr.bitrate_index] / (int)(freqs[fr.sampling_frequency] << ((int)fr.lsf)) + (int)fr.padding;
                     break;
@@ -583,8 +559,8 @@ namespace MediaStorage.Encoder.Mp3
                         ssize = (fr.stereo == 1) ? 17 : 32;
                     if (fr.error_protection != 0)
                         ssize += 2;
-                    framesize = BitRateIndex[fr.lsf, 2, fr.bitrate_index] * 144000;
-                    framesize /= (int)(freqs[fr.sampling_frequency] << ((int)fr.lsf));
+                    framesize = Constants.BitRateIndex[fr.lsf, 2, fr.bitrate_index] * 144000;
+                    framesize /= (int)(Constants.freqs[fr.sampling_frequency] << ((int)fr.lsf));
                     framesize = (int)(framesize + fr.padding - frameSizeSub);
                     //framesize = 144000 * BitRateIndex[fr.lsf, 2, fr.bitrate_index] / (int)(freqs[fr.sampling_frequency] << ((int)fr.lsf)) + (int)fr.padding;
                     break;
@@ -601,7 +577,7 @@ namespace MediaStorage.Encoder.Mp3
                 byte[] hdr = new byte[4];
                 head_read(hdr, ref data);
 
-                if (data == 0x58696E67) // Xing - 0x58696E67
+                if (data == Constants.Xing) // Xing - 0x58696E67
                 {
                     Args.IsVBR = true; // VBR header.
                     head_read(hdr, ref flags); // Flags
@@ -660,9 +636,7 @@ namespace MediaStorage.Encoder.Mp3
 
             //hbuf = tbuf[3] | (tbuf[2] << 7) | (tbuf[1] << 14) | (tbuf[0] << 21);
             int tagSize = tbuf[6] | (tbuf[5] << 7) | (tbuf[4] << 14) | (tbuf[3] << 21);
-
-            long OldPosi, XPosi;
-            XPosi = tagSize + 6;
+            long XPosi = tagSize + 6;
 
             if(_readTags)
             {
@@ -689,8 +663,7 @@ namespace MediaStorage.Encoder.Mp3
                 }
             }
 
-            //OldPosi = _fileStream.Seek(0, SeekOrigin.Begin);
-            var off = _fileStream.Seek(XPosi, SeekOrigin.Begin);
+            _fileStream.Seek(XPosi, SeekOrigin.Begin);
             return head_read(abuf, ref newhead);
         }
 
@@ -711,8 +684,8 @@ namespace MediaStorage.Encoder.Mp3
 
         public void Dispose()
         {
-            if (_fileStream != null)
-                _fileStream.Dispose();
+            // if (_fileStream != null)
+            //     _fileStream.Dispose();
             _fileStream = null;
         }
     }
