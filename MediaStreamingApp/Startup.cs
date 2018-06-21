@@ -45,21 +45,22 @@ namespace MediaStreamingApp
         private static IAbstractDependencyInjector _di;
         private readonly string _contentRootPath;
         
-        public Startup(IHostingEnvironment env, IServiceProvider serviceProvider)
+        public Startup(IConfiguration configuration, IHostingEnvironment env, IServiceProvider serviceProvider)
         {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true);
+            // var builder = new ConfigurationBuilder()
+            //     .SetBasePath(env.ContentRootPath)
+            //     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            //     .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true);
 
-            if (env.IsDevelopment())
-            {
-                // For more details on using the user secret store see https://go.microsoft.com/fwlink/?LinkID=532709
-                builder.AddUserSecrets<Startup>();
-            }
+            // if (env.IsDevelopment())
+            // {
+            //     // For more details on using the user secret store see https://go.microsoft.com/fwlink/?LinkID=532709
+            //     builder.AddUserSecrets<Startup>();
+            // }
 
-            builder.AddEnvironmentVariables();
-            _configuration = builder.Build();
+            // builder.AddEnvironmentVariables();
+            // _configuration = builder.Build();
+            _configuration = configuration;
             _contentRootPath = env.ContentRootPath;
             _hostingEnvironment = env;
             _serviceProvider = serviceProvider;
