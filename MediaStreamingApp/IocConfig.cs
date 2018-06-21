@@ -5,6 +5,7 @@ using MediaStorage.IO.FileStream;
 using MediaStorage.IO.GoogleDrive;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace MediaStreamingApp
 {
@@ -27,6 +28,7 @@ namespace MediaStreamingApp
 
             di.AddPerThread<IStorage>(provider => {
                 var config = provider.Resolve<IConfiguration>();
+                Console.WriteLine($"{config["MediaStorage:GoogleDrive:AppName"]} - {config["MediaStorage:GoogleDrive:ClientId"]} - {config["MediaStorage:GoogleDrive:ClientSecret"]}");
                 return GoogleDriveStorageFactory.Create(
                     config["MediaStorage:GoogleDrive:AppName"], 
                     config["MediaStorage:GoogleDrive:ClientId"], 
