@@ -32,6 +32,11 @@ using Microsoft.AspNetCore.Http;
 
 /*
 ASPNETCORE_ENVIRONMENT=Development dotnet run
+
+ASPNETCORE_ENVIRONMENT=Development  dotnet MediaStreamingApp.dll
+
+# publish
+dotnet publish MediaStreamingApp.csproj -c Debug -o publish
 localhost:5000/api/v1/audiopackets/offset?mediaId=weerwe&offset=0&numpackets=1
  */
 
@@ -86,7 +91,8 @@ namespace MediaStreamingApp
              
             services.AddMvc()
             .AddJsonOptions(options => {
-                options.SerializerSettings.ContractResolver = new DefaultContractResolver(); // Without this contract property names will change useing camelCase.
+                // Without this contract property names will change useing camelCase.
+                options.SerializerSettings.ContractResolver = new DefaultContractResolver(); 
             });
             
             // Add application services.

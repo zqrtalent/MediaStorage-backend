@@ -10,6 +10,7 @@ using MediaStreamingApp.Models;
 using MediaStorage.Common.Dtos.Upload;
 using MediaStorage.Data.WebApp.Entities;
 using MediaStorage.Core.Services;
+using MediaStorage.IO;
 
 namespace MediaStreamingApp.Controllers
 {
@@ -21,10 +22,12 @@ namespace MediaStreamingApp.Controllers
         protected UserManager<ApplicationUser> UserManager {get; set;}
         private readonly IMediaUploadService _uploadService;
 
-        public LibraryController(UserManager<ApplicationUser> userManager, IMediaUploadService uploadService)
+        public LibraryController(UserManager<ApplicationUser> userManager, IMediaUploadService uploadService, IStorage storage)
         {
             UserManager = userManager;
             _uploadService = uploadService;
+
+            storage.Exists("hello.txt");
         }
         
         [HttpGet]
